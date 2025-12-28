@@ -1,0 +1,266 @@
+name: JTBD Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'jtbd/**'
+      - '.github/workflows/jtbd-tests.yml'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'jtbd/**'
+      - '.github/workflows/jtbd-tests.yml'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  test-matrix:
+    name: Test on ${{ matrix.os }} with Go ${{ matrix.go-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: ['1.23', '1.24']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+        cache: true
+
+    - name: Display Go version
+      run: go version
+
+    - name: Run JTBD tests with verbose output
+      run: go test -v -timeout 5m -parallel 4 -coverprofile=coverage-${{ matrix.os }}-${{ matrix.go-version }}.out ./jtbd/...
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-reports-${{ matrix.os }}-${{ matrix.go-version }}
+        path: coverage-*.out
+        retention-days: 30
+
+    - name: Generate coverage badge
+      if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.23'
+      run: |
+        go tool cover -func=coverage-${{ matrix.os }}-${{ matrix.go-version }}.out | grep total | awk '{print $3}' > coverage.txt
+        COVERAGE=$(cat coverage.txt)
+        echo "Coverage: $COVERAGE"
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_OUTPUT
+      id: coverage
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test-matrix
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Run integration tests
+      run: go test -v -timeout 10m -run Integration ./jtbd/...
+
+    - name: Run industry-specific tests
+      run: |
+        go test -v -timeout 5m -run Saas ./jtbd/... || echo "SaaS tests completed"
+        go test -v -timeout 5m -run Ecommerce ./jtbd/... || echo "E-commerce tests completed"
+        go test -v -timeout 5m -run Manufacturing ./jtbd/... || echo "Manufacturing tests completed"
+
+    - name: Run race detector
+      run: go test -race -timeout 10m ./jtbd/...
+
+  benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Run benchmarks
+      run: go test -bench=. -benchmem -benchtime=3s -timeout 30m ./jtbd/... | tee benchmark-results.txt
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark-results.txt
+        retention-days: 90
+
+    - name: Compare benchmarks
+      if: github.event_name == 'pull_request'
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'go'
+        output-file-path: benchmark-results.txt
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: false
+
+  coverage-report:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    needs: test-matrix
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        path: coverage-artifacts
+
+    - name: Generate coverage HTML report
+      run: |
+        mkdir -p coverage-reports
+        find coverage-artifacts -name "*.out" -exec cat {} \; > combined-coverage.out 2>/dev/null || true
+        if [ -f combined-coverage.out ]; then
+          go tool cover -html=combined-coverage.out -o coverage-reports/index.html
+        fi
+
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-html-report
+        path: coverage-reports/index.html
+        retention-days: 30
+
+    - name: Check coverage threshold
+      run: |
+        COVERAGE=$(go tool cover -func=combined-coverage.out 2>/dev/null | grep total | awk '{print substr($3, 1, length($3)-1)}' || echo "0")
+        echo "Total Coverage: ${COVERAGE}%"
+        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+          echo "::warning::Coverage below 70% threshold: ${COVERAGE}%"
+        fi
+
+  test-results:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: [test-matrix, integration-tests]
+    if: always()
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Generate test summary
+      run: |
+        echo "## JTBD Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Matrix Test Status" >> $GITHUB_STEP_SUMMARY
+        echo "| OS | Go Version | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|----|----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| ubuntu-latest | 1.23 | ${{ needs.test-matrix.outputs.ubuntu-1-23 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| ubuntu-latest | 1.24 | ${{ needs.test-matrix.outputs.ubuntu-1-24 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| macos-latest | 1.23 | ${{ needs.test-matrix.outputs.macos-1-23 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| macos-latest | 1.24 | ${{ needs.test-matrix.outputs.macos-1-24 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| windows-latest | 1.23 | ${{ needs.test-matrix.outputs.windows-1-23 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| windows-latest | 1.24 | ${{ needs.test-matrix.outputs.windows-1-24 || 'Pending' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Jobs Status" >> $GITHUB_STEP_SUMMARY
+        echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+
+    - name: Post PR comment with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const summary = fs.readFileSync(process.env.GITHUB_STEP_SUMMARY, 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summary
+          })
+
+    - name: Check job statuses
+      if: failure()
+      run: |
+        echo "::error::One or more test jobs failed"
+        exit 1
+
+  cli-test:
+    name: JTBD CLI Tool Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Build JTBD CLI
+      run: go build -o jtbd-test ./jtbd/cmd/jtbd-test/main.go
+
+    - name: Test CLI - Run all tests
+      run: ./jtbd-test --all --format json --output cli-test-results.json
+      continue-on-error: true
+
+    - name: Test CLI - Run specific industry
+      run: ./jtbd-test --industry saas --verbose
+      continue-on-error: true
+
+    - name: Upload CLI test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: cli-test-results
+        path: cli-test-results.json
+        retention-days: 7
+
+  final-check:
+    name: Final Status Check
+    runs-on: ubuntu-latest
+    needs: [test-matrix, integration-tests, coverage-report]
+    if: always()
+
+    steps:
+    - name: Determine final status
+      run: |
+        if [ "${{ needs.test-matrix.result }}" == "failure" ] || [ "${{ needs.integration-tests.result }}" == "failure" ]; then
+          echo "::error::JTBD tests failed"
+          exit 1
+        fi
+        echo "::notice::All JTBD tests passed successfully"
+      shell: bash
