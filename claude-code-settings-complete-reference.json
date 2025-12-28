@@ -1,0 +1,962 @@
+{
+  "claude_code_settings_reference": {
+    "metadata": {
+      "version": "2025",
+      "last_updated": "2025-12-28",
+      "source": "Official Claude Code Documentation",
+      "hierarchy": [
+        "Enterprise managed settings (highest precedence)",
+        "File-based managed settings",
+        "Command-line arguments",
+        "Local project settings (.claude/settings.local.json)",
+        "Shared project settings (.claude/settings.json)",
+        "User settings (~/.claude/settings.json) (lowest precedence)"
+      ]
+    },
+    "settings": [
+      {
+        "category": "Authentication",
+        "setting_name": "apiKeyHelper",
+        "type": "string",
+        "default_value": null,
+        "description": "Custom shell script that generates authentication values for model requests. The script output is used to authenticate API calls.",
+        "example": "/path/to/auth-script.sh"
+      },
+      {
+        "category": "Authentication",
+        "setting_name": "forceLoginMethod",
+        "type": "string",
+        "default_value": null,
+        "description": "Restrict login method to either 'claudeai' (OAuth via claude.ai) or 'console' (API keys via console.anthropic.com). Enterprise setting to enforce authentication method.",
+        "example": "claudeai"
+      },
+      {
+        "category": "Authentication",
+        "setting_name": "forceLoginOrgUUID",
+        "type": "string",
+        "default_value": null,
+        "description": "Auto-select organization UUID during login. Useful for enterprise deployments to ensure users authenticate to the correct organization.",
+        "example": "org_1234567890abcdef"
+      },
+      {
+        "category": "Model Configuration",
+        "setting_name": "model",
+        "type": "string",
+        "default_value": "claude-sonnet-4-5-20250929",
+        "description": "Override the default model used for Claude Code sessions. Supports all Claude models including Sonnet, Opus, and Haiku variants.",
+        "example": "claude-opus-4-5-20251101"
+      },
+      {
+        "category": "Model Configuration",
+        "setting_name": "outputStyle",
+        "type": "string",
+        "default_value": null,
+        "description": "Adjust the system prompt via output styles to modify Claude's response behavior and formatting preferences.",
+        "example": "concise"
+      },
+      {
+        "category": "Session Management",
+        "setting_name": "cleanupPeriodDays",
+        "type": "number",
+        "default_value": 30,
+        "description": "Number of days after which inactive sessions are automatically deleted. Sessions inactive longer than this period are purged to save storage.",
+        "example": 60
+      },
+      {
+        "category": "Session Management",
+        "setting_name": "companyAnnouncements",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of startup announcements displayed to users when Claude Code launches. Enterprise setting for communicating policies or updates.",
+        "example": ["New security policy: All code must be reviewed", "Reminder: Use approved MCP servers only"]
+      },
+      {
+        "category": "Environment",
+        "setting_name": "env",
+        "type": "object",
+        "default_value": {},
+        "description": "Environment variables applied to every Claude Code session. These variables are accessible to all tools and hooks during execution.",
+        "example": {
+          "NODE_ENV": "production",
+          "API_BASE_URL": "https://api.company.com",
+          "MAX_RETRIES": "3"
+        }
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions",
+        "type": "object",
+        "default_value": {},
+        "description": "Comprehensive permission configuration controlling tool and command access. Includes allow, ask, and deny rules with pattern matching.",
+        "example": {
+          "allow": ["Bash(npm run:*)", "Read(~/.zshrc)"],
+          "ask": ["Bash(git push:*)", "WebFetch"],
+          "deny": ["Read(./.env)", "Read(./secrets/**)", "Write(/etc/**)"],
+          "additionalDirectories": ["../docs/"],
+          "defaultMode": "acceptEdits",
+          "disableBypassPermissionsMode": false
+        }
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.allow",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of tool patterns that run autonomously without requiring user approval. Supports prefix matching and wildcards.",
+        "example": ["Bash(npm run:*)", "Read(~/.config/**)", "Grep", "Glob"]
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.ask",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of tool patterns that require user approval before execution. Creates a permission prompt for matched operations.",
+        "example": ["Bash(git push:*)", "WebFetch", "Write(./src/**)", "Edit(./config/**)"]
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.deny",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of tool patterns that are completely blocked. Claude Code will not execute these operations and will inform the user they are denied.",
+        "example": ["Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)", "Bash(rm -rf:*)", "Write(/etc/**)"]
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.additionalDirectories",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "Additional directories outside the project root that Claude Code is allowed to access. Expands the default workspace boundary.",
+        "example": ["../docs/", "~/shared-config/", "/opt/company-tools/"]
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.defaultMode",
+        "type": "string",
+        "default_value": null,
+        "description": "Default permission mode for operations not explicitly configured. Options include 'acceptEdits' for auto-accepting file edits.",
+        "example": "acceptEdits"
+      },
+      {
+        "category": "Permissions",
+        "setting_name": "permissions.disableBypassPermissionsMode",
+        "type": "boolean",
+        "default_value": false,
+        "description": "When true, disables the ability to temporarily bypass permission checks. Enterprise setting for enforcing strict security.",
+        "example": true
+      },
+      {
+        "category": "Attribution",
+        "setting_name": "attribution.commit",
+        "type": "string",
+        "default_value": null,
+        "description": "Custom Git commit attribution text. Supports Git trailer format for co-authorship. Replaces deprecated 'includeCoAuthoredBy' setting.",
+        "example": "Co-Authored-By: Claude Code <claude-code@anthropic.com>"
+      },
+      {
+        "category": "Attribution",
+        "setting_name": "attribution.pr",
+        "type": "string",
+        "default_value": null,
+        "description": "Custom pull request description attribution text. Appended to PR descriptions when Claude Code creates pull requests.",
+        "example": "\n\n---\n*Generated with assistance from Claude Code*"
+      },
+      {
+        "category": "Attribution",
+        "setting_name": "includeCoAuthoredBy",
+        "type": "boolean",
+        "default_value": null,
+        "description": "**DEPRECATED**: Use 'attribution.commit' instead. Previously controlled whether to add Co-Authored-By trailer to commits.",
+        "example": true
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.enabled",
+        "type": "boolean",
+        "default_value": true,
+        "description": "Enable or disable sandboxing for Bash tool execution. When enabled, commands run in an isolated environment with restricted access.",
+        "example": true
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.autoAllowBashIfSandboxed",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Auto-allow mode: when true, Bash commands automatically run inside the sandbox without requiring permission prompts.",
+        "example": true
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.excludedCommands",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of commands that must run outside the sandbox. Useful for tools like Docker that require host-level access.",
+        "example": ["docker", "podman", "systemctl"]
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.allowUnsandboxedCommands",
+        "type": "boolean",
+        "default_value": false,
+        "description": "When true, allows commands to escape the sandbox. Disabling provides stronger security but may break certain workflows.",
+        "example": false
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.network",
+        "type": "object",
+        "default_value": {},
+        "description": "Network isolation configuration for sandboxed environments. Controls proxy settings, domain access, and socket permissions.",
+        "example": {
+          "httpProxyPort": 8080,
+          "socksProxyPort": 8081,
+          "allowUnixSockets": ["~/.ssh/agent-socket"],
+          "allowLocalBinding": true
+        }
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.network.httpProxyPort",
+        "type": "number",
+        "default_value": 8080,
+        "description": "Port number for HTTP proxy server used to mediate sandbox network access. All HTTP/HTTPS traffic routes through this proxy.",
+        "example": 8080
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.network.socksProxyPort",
+        "type": "number",
+        "default_value": 8081,
+        "description": "Port number for SOCKS proxy server. Provides protocol-agnostic proxying for sandbox network connections.",
+        "example": 8081
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.network.allowUnixSockets",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of Unix socket paths the sandbox can access. Required for tools like SSH agent. Use carefully as sockets can bypass isolation.",
+        "example": ["~/.ssh/agent-socket", "/var/run/docker.sock"]
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.network.allowLocalBinding",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Allow binding to local network interfaces from within the sandbox. Required for running local development servers.",
+        "example": true
+      },
+      {
+        "category": "Sandbox",
+        "setting_name": "sandbox.enableWeakerNestedSandbox",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Enable weaker nested sandbox mode for Docker compatibility. Reduces security guarantees but allows running containers inside the sandbox.",
+        "example": true
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks",
+        "type": "object",
+        "default_value": {},
+        "description": "Configure hook events that execute custom commands or prompts at various points in Claude Code's lifecycle. Supports PreToolUse, PostToolUse, SessionStart, and more.",
+        "example": {
+          "PreToolUse": [
+            {
+              "matcher": "Edit|Write",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "prettier --check",
+                  "timeout": 60
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "Edit|Write",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "npm test",
+                  "timeout": 300
+                }
+              ]
+            }
+          ],
+          "SessionStart": [
+            {
+              "matcher": "",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "source ~/.profile",
+                  "timeout": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.PreToolUse",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run after Claude creates tool parameters but before processing the tool call. Can modify, validate, or block tool execution.",
+        "example": [
+          {
+            "matcher": "Bash(git commit:*)",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "git diff --cached --check",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.PostToolUse",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run immediately after a tool completes successfully. Useful for formatting, testing, or validation after file modifications.",
+        "example": [
+          {
+            "matcher": "Edit|Write|MultiEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "eslint --fix $FILE",
+                "timeout": 60
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.SessionStart",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run when a Claude Code session initializes. Can set up environment, load configurations, or perform setup tasks.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "source .env.local && echo 'export API_KEY=$API_KEY' > $CLAUDE_ENV_FILE",
+                "timeout": 10
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.SessionEnd",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run when a Claude Code session terminates. Can perform cleanup, save state, or generate reports.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "cleanup-temp-files.sh",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.PermissionRequest",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that intercept permission dialogs. Can automatically approve, deny, or modify permission requests based on custom logic.",
+        "example": [
+          {
+            "matcher": "*",
+            "hooks": [
+              {
+                "type": "prompt",
+                "prompt": "Evaluate if this operation is safe: $ARGUMENTS",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.UserPromptSubmit",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run before processing user input. Can preprocess, validate, or augment user prompts with additional context.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "load-project-context.sh",
+                "timeout": 10
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.Stop",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run when the main agent finishes a task. Can generate summaries, update documentation, or trigger downstream processes.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "generate-changelog.sh",
+                "timeout": 60
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.SubagentStop",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run when a subagent finishes. Useful for aggregating results from parallel agent executions.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "collect-agent-results.sh",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.PreCompact",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run before context compaction. Can save important context or modify what gets preserved during compaction.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "save-important-context.sh",
+                "timeout": 20
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "hooks.Notification",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Hooks that run when notifications are sent. Can integrate with external notification systems or logging platforms.",
+        "example": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "send-to-slack.sh",
+                "timeout": 10
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "disableAllHooks",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Globally disable all hooks. Overrides all hook configurations. Useful for troubleshooting or temporary security lockdown.",
+        "example": true
+      },
+      {
+        "category": "Hooks",
+        "setting_name": "allowManagedHooksOnly",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Enterprise setting: when true, only allows hooks from managed settings or SDK. Blocks user-defined and project-defined hooks.",
+        "example": true
+      },
+      {
+        "category": "MCP Servers",
+        "setting_name": "enableAllProjectMcpServers",
+        "type": "boolean",
+        "default_value": false,
+        "description": "Auto-approve all MCP servers defined in project .mcp.json files. When true, bypasses individual server approval prompts.",
+        "example": true
+      },
+      {
+        "category": "MCP Servers",
+        "setting_name": "enabledMcpjsonServers",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of specific MCP server names from .mcp.json that are pre-approved. Servers not in this list require user approval.",
+        "example": ["filesystem", "github", "postgres"]
+      },
+      {
+        "category": "MCP Servers",
+        "setting_name": "disabledMcpjsonServers",
+        "type": "array<string>",
+        "default_value": [],
+        "description": "List of specific MCP server names from .mcp.json that are explicitly rejected. Takes precedence over enabled list.",
+        "example": ["experimental-server", "deprecated-api"]
+      },
+      {
+        "category": "MCP Servers",
+        "setting_name": "allowedMcpServers",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Enterprise setting: allowlist of permitted MCP servers. Only servers matching this list can be used. Each object specifies server identification criteria.",
+        "example": [
+          {
+            "name": "approved-filesystem",
+            "command": "/usr/local/bin/mcp-fs-server"
+          },
+          {
+            "name": "company-github",
+            "command": "npx @company/github-mcp-server"
+          }
+        ]
+      },
+      {
+        "category": "MCP Servers",
+        "setting_name": "deniedMcpServers",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Enterprise setting: blocklist of forbidden MCP servers. Servers matching this list are always rejected, regardless of other settings.",
+        "example": [
+          {
+            "name": "insecure-server",
+            "command": "*"
+          },
+          {
+            "name": "*",
+            "command": "*/untrusted/*"
+          }
+        ]
+      },
+      {
+        "category": "Plugins",
+        "setting_name": "enabledPlugins",
+        "type": "object",
+        "default_value": {},
+        "description": "Map of plugin names to boolean enabled status. Controls which marketplace plugins are active in Claude Code.",
+        "example": {
+          "formatter@acme-tools": true,
+          "deployer@acme-tools": false,
+          "linter@community": true
+        }
+      },
+      {
+        "category": "Plugins",
+        "setting_name": "extraKnownMarketplaces",
+        "type": "object",
+        "default_value": {},
+        "description": "Additional plugin marketplaces beyond the official marketplace. Each marketplace is identified by a key and source configuration.",
+        "example": {
+          "acme-tools": {
+            "source": {
+              "source": "github",
+              "repo": "acme-corp/claude-plugins"
+            }
+          },
+          "internal-tools": {
+            "source": {
+              "source": "github",
+              "repo": "company/internal-claude-plugins"
+            }
+          }
+        }
+      },
+      {
+        "category": "Plugins",
+        "setting_name": "strictKnownMarketplaces",
+        "type": "array<object>",
+        "default_value": [],
+        "description": "Enterprise setting: when set, ONLY these marketplaces are allowed. Overrides default and extra marketplaces for strict control.",
+        "example": [
+          {
+            "source": "github",
+            "repo": "company/approved-plugins"
+          },
+          {
+            "source": "github",
+            "repo": "anthropics/official-plugins"
+          }
+        ]
+      },
+      {
+        "category": "File Handling",
+        "setting_name": "fileSuggestion",
+        "type": "object",
+        "default_value": null,
+        "description": "Custom script configuration for '@' file autocomplete functionality. Allows custom file discovery and suggestion logic.",
+        "example": {
+          "command": "custom-file-suggester.sh",
+          "timeout": 5
+        }
+      },
+      {
+        "category": "UI Configuration",
+        "setting_name": "statusLine",
+        "type": "object",
+        "default_value": null,
+        "description": "Custom status line display configuration. Allows customization of information shown in the Claude Code status bar.",
+        "example": {
+          "command": "get-status.sh",
+          "interval": 5
+        }
+      }
+    ],
+    "environment_variables": [
+      {
+        "category": "Authentication",
+        "setting_name": "ANTHROPIC_API_KEY",
+        "type": "string",
+        "default_value": null,
+        "description": "API key for authenticating with Anthropic services. Primary method for API authentication.",
+        "example": "sk-ant-api03-..."
+      },
+      {
+        "category": "Authentication",
+        "setting_name": "ANTHROPIC_AUTH_TOKEN",
+        "type": "string",
+        "default_value": null,
+        "description": "Custom Authorization header value. Alternative to ANTHROPIC_API_KEY for advanced authentication scenarios.",
+        "example": "Bearer custom-token-here"
+      },
+      {
+        "category": "Model Configuration",
+        "setting_name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+        "type": "number",
+        "default_value": null,
+        "description": "Maximum output tokens per response. Limits the length of Claude's responses to control costs and response time.",
+        "example": "8192"
+      },
+      {
+        "category": "Model Configuration",
+        "setting_name": "MAX_THINKING_TOKENS",
+        "type": "number",
+        "default_value": null,
+        "description": "Enable extended thinking mode by setting maximum thinking tokens. Allows Claude to reason more deeply before responding.",
+        "example": "10000"
+      },
+      {
+        "category": "Privacy & Telemetry",
+        "setting_name": "DISABLE_TELEMETRY",
+        "type": "boolean",
+        "default_value": "false",
+        "description": "Opt out of analytics and usage telemetry. When set to 'true', no usage data is sent to Anthropic.",
+        "example": "true"
+      },
+      {
+        "category": "Performance",
+        "setting_name": "DISABLE_PROMPT_CACHING",
+        "type": "boolean",
+        "default_value": "false",
+        "description": "Disable prompt caching globally. When true, forces fresh evaluation of all prompts without using cache.",
+        "example": "true"
+      },
+      {
+        "category": "Environment",
+        "setting_name": "CLAUDE_ENV_FILE",
+        "type": "string",
+        "default_value": null,
+        "description": "SessionStart hook only: file path for persisting environment variables across session. Hook scripts can write to this file.",
+        "example": "/tmp/claude-session-env.sh"
+      },
+      {
+        "category": "Networking",
+        "setting_name": "HTTP_PROXY",
+        "type": "string",
+        "default_value": null,
+        "description": "HTTP proxy server for outbound connections. All HTTP traffic routes through this proxy.",
+        "example": "http://proxy.company.com:8080"
+      },
+      {
+        "category": "Networking",
+        "setting_name": "HTTPS_PROXY",
+        "type": "string",
+        "default_value": null,
+        "description": "HTTPS proxy server for secure outbound connections. All HTTPS traffic routes through this proxy.",
+        "example": "https://proxy.company.com:8443"
+      },
+      {
+        "category": "Networking",
+        "setting_name": "NO_PROXY",
+        "type": "string",
+        "default_value": null,
+        "description": "Comma-separated list of domains that bypass proxy. Useful for internal services that don't require proxying.",
+        "example": "localhost,127.0.0.1,.company.internal"
+      },
+      {
+        "category": "Project Context",
+        "setting_name": "CLAUDE_PROJECT_DIR",
+        "type": "string",
+        "default_value": null,
+        "description": "Absolute path to project root directory. Automatically set by Claude Code and available to all hooks and tools.",
+        "example": "/home/user/my-project"
+      },
+      {
+        "category": "Runtime Environment",
+        "setting_name": "CLAUDE_CODE_REMOTE",
+        "type": "string",
+        "default_value": null,
+        "description": "Set to 'true' when running in Claude Code web environment, empty for local CLI. Allows hooks to detect runtime context.",
+        "example": "true"
+      }
+    ],
+    "hook_matcher_patterns": [
+      {
+        "pattern": "ToolName",
+        "description": "Exact match - matches only the specified tool name (case-sensitive)",
+        "example": "Write"
+      },
+      {
+        "pattern": "Tool1|Tool2",
+        "description": "Multiple exact matches - matches any of the specified tools using pipe separator",
+        "example": "Edit|Write|MultiEdit"
+      },
+      {
+        "pattern": "Notebook.*",
+        "description": "Regex pattern - matches tools using regular expression syntax",
+        "example": "Notebook.*"
+      },
+      {
+        "pattern": "*",
+        "description": "Wildcard - matches all tools",
+        "example": "*"
+      },
+      {
+        "pattern": "",
+        "description": "Empty or omitted - for events that don't involve specific tools (SessionStart, SessionEnd, etc.)",
+        "example": ""
+      },
+      {
+        "pattern": "Bash(git push:*)",
+        "description": "Command pattern - matches Bash commands with specific patterns",
+        "example": "Bash(npm run:*)"
+      }
+    ],
+    "hook_exit_codes": [
+      {
+        "code": 0,
+        "name": "Success",
+        "description": "Hook executed successfully. JSON output is parsed if provided. For UserPromptSubmit and SessionStart, stdout is added as context."
+      },
+      {
+        "code": 2,
+        "name": "Blocking Error",
+        "description": "Fatal error that blocks the operation. stderr is used as error message, JSON output is ignored, and the tool/permission is blocked."
+      },
+      {
+        "code": "other",
+        "name": "Non-blocking Error",
+        "description": "Error occurred but execution continues. stderr is shown in verbose mode only, operation proceeds normally."
+      }
+    ],
+    "permission_precedence": [
+      {
+        "level": 1,
+        "scope": "Enterprise Managed Settings",
+        "location": [
+          "/Library/Application Support/ClaudeCode/ (macOS)",
+          "/etc/claude-code/ (Linux/WSL)",
+          "C:\\Program Files\\ClaudeCode\\ (Windows)"
+        ],
+        "description": "Highest precedence - enterprise-wide policies enforced across all users"
+      },
+      {
+        "level": 2,
+        "scope": "File-based Managed Settings",
+        "location": ["System-specific managed configuration paths"],
+        "description": "Deployed configuration files for managed environments"
+      },
+      {
+        "level": 3,
+        "scope": "Command-line Arguments",
+        "location": ["Runtime flags passed to claude-code command"],
+        "description": "Flags passed when launching Claude Code (e.g., --model, --allow)"
+      },
+      {
+        "level": 4,
+        "scope": "Local Project Settings",
+        "location": [".claude/settings.local.json"],
+        "description": "Personal project overrides not committed to source control (.gitignored)"
+      },
+      {
+        "level": 5,
+        "scope": "Shared Project Settings",
+        "location": [".claude/settings.json"],
+        "description": "Team-shared project configuration committed to source control"
+      },
+      {
+        "level": 6,
+        "scope": "User Settings",
+        "location": ["~/.claude/settings.json", "~/.claude.json (legacy)"],
+        "description": "Lowest precedence - user's global defaults applied to all projects"
+      }
+    ],
+    "complete_example": {
+      "model": "claude-sonnet-4-5-20250929",
+      "cleanupPeriodDays": 60,
+      "env": {
+        "NODE_ENV": "development",
+        "API_BASE_URL": "https://api.internal.company.com",
+        "LOG_LEVEL": "info"
+      },
+      "permissions": {
+        "allow": [
+          "Bash(npm run:*)",
+          "Bash(yarn:*)",
+          "Read(~/.config/**)",
+          "Grep",
+          "Glob",
+          "Read(./src/**)",
+          "Read(./tests/**)"
+        ],
+        "ask": [
+          "Bash(git push:*)",
+          "Bash(git commit:*)",
+          "WebFetch",
+          "Write(./src/**)",
+          "Edit(./src/**)"
+        ],
+        "deny": [
+          "Read(./.env)",
+          "Read(./.env.*)",
+          "Read(./secrets/**)",
+          "Bash(rm -rf:*)",
+          "Write(/etc/**)",
+          "Write(/usr/**)"
+        ],
+        "additionalDirectories": [
+          "../shared-utils/",
+          "~/company-config/"
+        ],
+        "defaultMode": "acceptEdits"
+      },
+      "attribution": {
+        "commit": "Co-Authored-By: Claude Code <claude-code@anthropic.com>",
+        "pr": "\n\n---\n*Generated with assistance from Claude Code*"
+      },
+      "sandbox": {
+        "enabled": true,
+        "autoAllowBashIfSandboxed": true,
+        "excludedCommands": ["docker", "systemctl"],
+        "allowUnsandboxedCommands": false,
+        "network": {
+          "httpProxyPort": 8080,
+          "socksProxyPort": 8081,
+          "allowUnixSockets": ["~/.ssh/agent-socket"],
+          "allowLocalBinding": true
+        },
+        "enableWeakerNestedSandbox": false
+      },
+      "hooks": {
+        "SessionStart": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "source .env.local 2>/dev/null || true",
+                "timeout": 10
+              }
+            ]
+          }
+        ],
+        "PreToolUse": [
+          {
+            "matcher": "Edit|Write|MultiEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "prettier --check",
+                "timeout": 30
+              }
+            ]
+          }
+        ],
+        "PostToolUse": [
+          {
+            "matcher": "Edit|Write|MultiEdit",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "npm run lint:fix",
+                "timeout": 60
+              },
+              {
+                "type": "command",
+                "command": "npm test -- --bail",
+                "timeout": 300
+              }
+            ]
+          }
+        ],
+        "Stop": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "generate-summary.sh",
+                "timeout": 30
+              }
+            ]
+          }
+        ]
+      },
+      "enableAllProjectMcpServers": false,
+      "enabledMcpjsonServers": [
+        "filesystem",
+        "github",
+        "postgres"
+      ],
+      "disabledMcpjsonServers": [
+        "experimental-api"
+      ],
+      "enabledPlugins": {
+        "formatter@company-tools": true,
+        "deployer@company-tools": false
+      },
+      "extraKnownMarketplaces": {
+        "company-tools": {
+          "source": {
+            "source": "github",
+            "repo": "company/claude-plugins"
+          }
+        }
+      }
+    }
+  }
+}

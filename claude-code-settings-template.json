@@ -1,0 +1,129 @@
+{
+  "$schema": "https://code.claude.com/schemas/settings.json",
+  "// CLAUDE CODE SETTINGS TEMPLATE": "2025 Edition - Complete Configuration Reference",
+  "// Documentation": "https://code.claude.com/docs/en/settings",
+
+  "// ========================================": "",
+  "// MODEL CONFIGURATION": "",
+  "// ========================================": "",
+  "model": "claude-sonnet-4-5-20250929",
+  "outputStyle": null,
+
+  "// ========================================": "",
+  "// AUTHENTICATION": "",
+  "// ========================================": "",
+  "apiKeyHelper": null,
+  "forceLoginMethod": null,
+  "forceLoginOrgUUID": null,
+
+  "// ========================================": "",
+  "// SESSION MANAGEMENT": "",
+  "// ========================================": "",
+  "cleanupPeriodDays": 30,
+  "companyAnnouncements": [],
+
+  "// ========================================": "",
+  "// ENVIRONMENT VARIABLES": "",
+  "// ========================================": "",
+  "env": {
+    "NODE_ENV": "development",
+    "LOG_LEVEL": "info"
+  },
+
+  "// ========================================": "",
+  "// PERMISSIONS CONFIGURATION": "",
+  "// ========================================": "",
+  "permissions": {
+    "allow": [
+      "Grep",
+      "Glob",
+      "Bash(npm run:*)",
+      "Bash(yarn:*)",
+      "Read(./src/**)",
+      "Read(./tests/**)",
+      "Read(~/.config/**)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "WebFetch",
+      "Write(./src/**)",
+      "Edit(./src/**)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Bash(rm -rf:*)",
+      "Write(/etc/**)"
+    ],
+    "additionalDirectories": [],
+    "defaultMode": null,
+    "disableBypassPermissionsMode": false
+  },
+
+  "// ========================================": "",
+  "// ATTRIBUTION": "",
+  "// ========================================": "",
+  "attribution": {
+    "commit": null,
+    "pr": null
+  },
+
+  "// ========================================": "",
+  "// SANDBOX CONFIGURATION": "",
+  "// ========================================": "",
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": false,
+    "excludedCommands": [],
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "httpProxyPort": 8080,
+      "socksProxyPort": 8081,
+      "allowUnixSockets": [],
+      "allowLocalBinding": false
+    },
+    "enableWeakerNestedSandbox": false
+  },
+
+  "// ========================================": "",
+  "// HOOKS CONFIGURATION": "",
+  "// ========================================": "",
+  "hooks": {
+    "SessionStart": [],
+    "SessionEnd": [],
+    "PreToolUse": [],
+    "PostToolUse": [],
+    "PermissionRequest": [],
+    "UserPromptSubmit": [],
+    "Stop": [],
+    "SubagentStop": [],
+    "PreCompact": [],
+    "Notification": []
+  },
+  "disableAllHooks": false,
+  "allowManagedHooksOnly": false,
+
+  "// ========================================": "",
+  "// MCP SERVER CONFIGURATION": "",
+  "// ========================================": "",
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [],
+  "disabledMcpjsonServers": [],
+  "allowedMcpServers": [],
+  "deniedMcpServers": [],
+
+  "// ========================================": "",
+  "// PLUGIN CONFIGURATION": "",
+  "// ========================================": "",
+  "enabledPlugins": {},
+  "extraKnownMarketplaces": {},
+  "strictKnownMarketplaces": [],
+
+  "// ========================================": "",
+  "// ADVANCED CONFIGURATION": "",
+  "// ========================================": "",
+  "fileSuggestion": null,
+  "statusLine": null
+}

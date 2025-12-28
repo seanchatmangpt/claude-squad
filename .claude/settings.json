@@ -1,0 +1,163 @@
+{
+  "model": "claude-sonnet-4-5-20250929",
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go mod:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Read(.*)",
+      "Edit(.*\\.go$)",
+      "Edit(.*\\.md$)",
+      "Edit(.claude/.*)",
+      "Write(.*\\.go$)",
+      "Write(.*\\.md$)",
+      "Write(.claude/.*)",
+      "Glob(.*)",
+      "Grep(.*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(rm:*)",
+      "Bash(rm -rf:*)",
+      "WebFetch(.*)",
+      "WebSearch(.*)",
+      "Task(.*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(.*\\.pem$)",
+      "Read(secrets/.*)",
+      "Write(.env)",
+      "Write(.env.*)",
+      "Write(.*\\.pem$)",
+      "Write(secrets/.*)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(.*\\.pem$)",
+      "Edit(secrets/.*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf /*:*)"
+    ],
+    "additionalDirectories": ["../docs/"],
+    "defaultMode": "acceptEdits"
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowedNetworkDomains": [
+      "github.com",
+      "api.github.com",
+      "raw.githubusercontent.com",
+      "golang.org",
+      "pkg.go.dev"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/code-formatter.sh",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "Edit.*\\.go$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/test-runner.sh",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Edit.*go\\.mod$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/dependency-checker.sh",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/security-guard.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/git-safety-guard.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "github": {
+      "command": "mcp-server-github",
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "transport": "stdio",
+      "disabled": true,
+      "comment": "Enable by setting GITHUB_TOKEN environment variable"
+    },
+    "filesystem": {
+      "command": "mcp-server-filesystem",
+      "args": [
+        "/home/user/claude-squad"
+      ],
+      "transport": "stdio",
+      "disabled": false
+    }
+  },
+  "features": {
+    "contextAwareness": true,
+    "progressTracking": true,
+    "collaborativeDevelopment": true,
+    "semanticCodeSearch": true,
+    "automatedTesting": true
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "maxSize": "100MB",
+    "maxAge": 30,
+    "maxBackups": 10
+  },
+  "description": "Production-ready Claude Code configuration for claude-squad project with security, testing, and git workflow automation"
+}
